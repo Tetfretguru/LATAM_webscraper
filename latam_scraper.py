@@ -2,8 +2,30 @@ import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
 
+def _get_vuelos(driver):
+	vuelos = driver.find_elements_by_xpath('//li[@class="flight"]')
+	return vuelos
+
 def _get_tarifa(vuelo):
-	pass
+	divisas = vuelo.find_elements_by_xpath('.//div[@class="fares-table-container"]//tfoot//td[contains(@class, "fare-")]//span[@class="currency-symbol"]')
+	valor = vuelo.find_elements_by_xpath('.//div[@class="fares-table-container"]//tfoot//td[contains(@class, "fare-")]//span[@class="value"]')
+
+	precios = []
+
+	for d in divisas:
+		for v in valores:
+			precio = d.text + ' ' + v.text
+			precios.append(precio)
+		break
+	
+
+	tarifas = {
+		'Light':precios[0],
+    	'Plus':precios[1],
+    	'Top':precios[2]
+		}
+
+	return tarifas
 
 def _get_escalas(vuelo):
 	# Segmentos del contenido en donde se ven las escalas
@@ -61,8 +83,9 @@ def _get_tiempos(vuelo):
 	return data_tiempos
 
 def main_get_info(driver):
+	
 	# Extraer informacion de la pagina
-	vuelos = driver.find_elements_by_xpath('//li[@class="flight"]')
+	vuelos = _get_vuelos(driver)
 	print(f'Se encontraron {len(vuelos)} vuelos.')
 	print('Iniciando scraping...')
 	info = []
@@ -83,6 +106,13 @@ def main_get_info(driver):
 
 		# Obtener tarifas
 		tarifas = _get_tarifa(vuelo)
+
+		data_info = {
+			'Tiempos':tiempos,
+			'Escalas':escalas,
+			'Tarifas':tarifas
+		}
+		info.append(data_info)
 
 	return info
 
