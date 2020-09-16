@@ -1,6 +1,21 @@
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
+import pandas as pd
+import logging
+logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger(__name__)
+
+def export_csv(df):
+	return df.to_csv('LATAM MVD a MAD 2020.csv')
+
+def export_excel(df):
+	return df.to_excel('LATAM MVD a MAD 2020.xls')
+
+def create_df(latam_info):
+	df = pd.DataFrame(LATAM_info)
+	return df
 
 def _get_vuelos(driver):
 	vuelos = driver.find_elements_by_xpath('//li[@class="flight"]')
@@ -127,4 +142,13 @@ if __name__ == '__main__':
 
 	driver = webdriver.Chrome(executable_path='/Users/Martin/Documents/Proyectos/Airlines_scrapper/chromedriver', options=options)
 	driver.get(url)
-	main_get_info(driver)
+	latam_info = main_get_info(driver)
+	df = create_df(latam_info)
+	export_csv(df)
+	
+	msg = input('¿Desea crer un archivo de Excel? (s/n): ')
+	if msg == 's':
+		export_excel(df)
+	else:
+		logger.info('Scraping finalizado.')
+		driver.close()
