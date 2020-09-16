@@ -1,9 +1,14 @@
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
 import pandas as pd
 import logging
 logging.basicConfig(level=logging.INFO)
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +19,7 @@ def export_excel(df):
 	return df.to_excel('LATAM MVD a MAD 2020.xls')
 
 def create_df(latam_info):
-	df = pd.DataFrame(LATAM_info)
+	df = pd.DataFrame(latam_info)
 	return df
 
 def _get_vuelos(driver):
@@ -23,7 +28,7 @@ def _get_vuelos(driver):
 
 def _get_tarifa(vuelo):
 	divisas = vuelo.find_elements_by_xpath('.//div[@class="fares-table-container"]//tfoot//td[contains(@class, "fare-")]//span[@class="currency-symbol"]')
-	valor = vuelo.find_elements_by_xpath('.//div[@class="fares-table-container"]//tfoot//td[contains(@class, "fare-")]//span[@class="value"]')
+	valores = vuelo.find_elements_by_xpath('.//div[@class="fares-table-container"]//tfoot//td[contains(@class, "fare-")]//span[@class="value"]')
 
 	precios = []
 
@@ -140,15 +145,23 @@ if __name__ == '__main__':
 	options = webdriver.ChromeOptions()
 	options.add_argument('--incognito')
 
-	driver = webdriver.Chrome(executable_path='/Users/Martin/Documents/Proyectos/Airlines_scrapper/chromedriver', options=options)
+	driver = webdriver.Chrome(executable_path='chromedriver', options=options)
 	driver.get(url)
-	latam_info = main_get_info(driver)
-	df = create_df(latam_info)
-	export_csv(df)
-	
-	msg = input('¿Desea crer un archivo de Excel? (s/n): ')
-	if msg == 's':
-		export_excel(df)
-	else:
-		logger.info('Scraping finalizado.')
+	# Introducir demora
+	delay = 30
+	try:
+		#Introducir demora inteligente
+		vuelo = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//li[@class="flight"]')))
+		logger.info('La página terminó de cargar.')
+		latam_info = main_get_info(driver)
+		print(latam_info)
+
+		df = create_df(latam_info)
+		export_csv(df)
+		export_csv(df)
+		driver.close()
+
+	except TimeoutException:
+		logger.info('La página tardó demasiado en cargar.')
+		latam_info = []
 		driver.close()
